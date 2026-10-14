@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Life Expectancy & Healthy Years Calculator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  .progress-bar-fill {
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .timeline-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+</style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+<div class="max-w-3xl mx-auto px-4 py-10">
+  <h1 class="text-3xl font-bold text-center mb-2 text-white">Life Expectancy & Healthy Years</h1>
+  <p class="text-center text-gray-400 mb-8 text-sm">Based on WHO statistics approximations</p>
+
+  <!-- Input Card -->
+  <div class="bg-gray-900 rounded-2xl p-6 mb-6 border border-gray-800">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <!-- Age -->
+      <div>
+        <label class="block text-sm font-medium text-gray-400 mb-2">Current Age</label>
+        <input
+          type="number"
+          id="age"
+          min="0" max="100"
+          value="30"
+          class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <!-- Sex -->
+      <div>
+        <label class="block text-sm font-medium text-gray-400 mb-2">Sex</label>
+        <select id="sex" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+      <!-- Region -->
+      <div>
+        <label class="block text-sm font-medium text-gray-400 mb-2">Region</label>
+        <select id="region" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="japan">Japan</option>
+          <option value="usa">United States</option>
+          <option value="uk">United Kingdom</option>
+          <option value="world">World Average</option>
+        </select>
+      </div>
+    </div>
+    <button
+      onclick="calculate()"
+      class="mt-5 w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl transition-colors"
+    >
+      Calculate
+    </button>
+  </div>
+
+  <!-- Results -->
+  <div id="results" class="hidden fade-in">
+    <!-- Life Progress -->
+    <div class="bg-gray-900 rounded-2xl p-6 mb-4 border border-gray-800">
+      <h2 class="text-lg font-semibold mb-4 text-gray-200">Life Progress</h2>
+      <!-- Total Life Bar -->
+      <div class="mb-5">
+        <div class="flex justify-between text-sm mb-1">
+          <span class="text-gray-400">Total Life Expectancy</span>
+          <span id="total-le-label" class="text-white font-medium"></span>
+        </div>
+        <div class="relative w-full bg-gray-800 rounded-full h-6 overflow-hidden">
+          <div id="lived-bar" class="progress-bar-fill h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full flex items-center justify-end pr-2" style="width:0%">
+            <span id="lived-pct" class="text-xs font-bold text-white"></span>
+          </div>
+        </div>
+        <div class="flex justify-between text-xs mt-1 text-gray-500">
+          <span>Born</span>
+          <span id="total-le-end"></span>
+        </div>
+      </div>
+
+      <!-- Healthy Life Bar -->
+      <div class="mb-2">
+        <div class="flex justify-between text-sm mb-1">
+          <span class="text-gray-400">Healthy Life Expectancy (HALE)</span>
+          <span id="hale-label" class="text-white font-medium"></span>
+        </div>
+        <div class="relative w-full bg-gray-800 rounded-full h-6 overflow-hidden">
+          <div id="healthy-bar" class="progress-bar-fill h-full bg-gradient-to-r from-green-600 to-green-400 rounded-full flex items-center justify-end pr-2" style="width:0%">
+            <span id="healthy-pct" class="text-xs font-bold text-white"></span>
+          </div>
+        </div>
+        <div class="flex justify-between text-xs mt-1 text-gray-500">
+          <span>Born</span>
+          <span id="hale-end"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
+        <div id="stat-years" class="text-2xl font-bold text-blue-400"></div>
+        <div class="text-xs text-gray-500 mt-1">Years Remaining</div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
+        <div id="stat-weeks" class="text-2xl font-bold text-purple-400"></div>
+        <div class="text-xs text-gray-500 mt-1">Weeks Remaining</div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
+        <div id="stat-days" class="text-2xl font-bold text-pink-400"></div>
+        <div class="text-xs text-gray-500 mt-1">Days Remaining</div>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
+        <div id="stat-healthy" class="text-2xl font-bold text-green-400"></div>
+        <div class="text-xs text-gray-500 mt-1">Healthy Years Left</div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="bg-gray-900 rounded-2xl p-6 border border-gray-800">
+      <h2 class="text-lg font-semibold mb-4 text-gray-200">Life Timeline</h2>
+      <div class="relative" style="height: 60px;">
+        <div class="absolute top-1/2 left-0 right-0 h-2 bg-gray-700 rounded-full transform -translate-y-1/2"></div>
+        <div id="timeline-lived" class="absolute top-1/2 left-0 h-2 bg-blue-500 rounded-l-full transform -translate-y-1/2 progress-bar-fill" style="width:0%"></div>
+        <div id="timeline-healthy" class="absolute top-1/2 h-2 bg-green-500 transform -translate-y-1/2 progress-bar-fill" style="left:0%; width:0%"></div>
+        <!-- Current age dot -->
+        <div id="dot-current" class="timeline-dot bg-white border-2 border-blue-400 z-10" style="left:0%"></div>
+        <!-- Healthy life end dot -->
+        <div id="dot-healthy" class="timeline-dot bg-green-400 z-10" style="left:0%"></div>
+        <!-- Death dot -->
+        <div id="dot-end" class="timeline-dot bg-red-500 z-10" style="left:100%"></div>
+      </div>
+      <div class="flex justify-between text-xs text-gray-500 mt-3">
+        <span>Age 0</span>
+        <span id="timeline-mid"></span>
+        <span id="timeline-end-label"></span>
+      </div>
+      <div class="flex gap-4 mt-4 text-xs flex-wrap">
+        <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full bg-blue-500"></span> Lived / Remaining</span>
+        <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full bg-green-500"></span> Healthy years</span>
+        <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full bg-white border border-blue-400"></span> Current age</span>
+        <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full bg-green-400"></span> Healthy life end</span>
+      </div>
+    </div>
+
+    <!-- Insight -->
+    <div id="insight-box" class="mt-4 bg-gray-900 border border-gray-800 rounded-xl p-4 text-sm text-gray-300"></div>
+  </div>
+</div>
+
+<script>
+  // WHO-approximate life expectancy and HALE data (2024 estimates)
+  // Format: [male_le, female_le, male_hale, female_hale]
+  const DATA = {
+    japan: [81.1, 87.1, 72.6, 75.5],
+    usa:   [76.1, 81.1, 66.1, 68.5],
+    uk:    [79.0, 82.9, 70.1, 71.9],
+    world: [71.0, 75.0, 63.3, 64.8],
+  };
+
+  function calculate() {
+    const age = parseFloat(document.getElementById('age').value);
+    const sex = document.getElementById('sex').value;
+    const region = document.getElementById('region').value;
+
+    if (isNaN(age) || age < 0 || age > 100) {
+      alert('Please enter a valid age between 0 and 100.');
+      return;
+    }
+
+    const d = DATA[region];
+    const le   = sex === 'male' ? d[0] : d[1];
+    const hale = sex === 'male' ? d[2] : d[3];
+
+    const remaining = Math.max(0, le - age);
+    const healthyLeft = Math.max(0, hale - age);
+    const livedPct  = Math.min(100, (age / le) * 100);
+    const halePct   = Math.min(100, (hale / le) * 100);
+    const healthyPctOfTotal = Math.min(100, Math.max(0, ((hale - age) / le) * 100));
+
+    // Update labels
+    document.getElementById('total-le-label').textContent = `${le} years`;
+    document.getElementById('hale-label').textContent = `${hale} years`;
+    document.getElementById('total-le-end').textContent = `Age ${le}`;
+    document.getElementById('hale-end').textContent = `Age ${hale}`;
+
+    // Progress bars
+    setTimeout(() => {
+      document.getElementById('lived-bar').style.width = livedPct.toFixed(1) + '%';
+      document.getElementById('lived-pct').textContent = livedPct.toFixed(1) + '%';
+      document.getElementById('healthy-bar').style.width = halePct.toFixed(1) + '%';
+      document.getElementById('healthy-pct').textContent = halePct.toFixed(1) + '%';
+    }, 50);
+
+    // Stats
+    document.getElementById('stat-years').textContent = remaining.toFixed(1);
+    document.getElementById('stat-weeks').textContent = Math.floor(remaining * 52.18).toLocaleString();
+    document.getElementById('stat-days').textContent  = Math.floor(remaining * 365.25).toLocaleString();
+    document.getElementById('stat-healthy').textContent = healthyLeft.toFixed(1);
+
+    // Timeline
+    const currentPct  = (age / le) * 100;
+    const healthyEndPct = (hale / le) * 100;
+    setTimeout(() => {
+      document.getElementById('timeline-lived').style.width = currentPct.toFixed(1) + '%';
+      // healthy remaining portion
+      if (age < hale) {
+        document.getElementById('timeline-healthy').style.left  = currentPct.toFixed(1) + '%';
+        document.getElementById('timeline-healthy').style.width = ((hale - age) / le * 100).toFixed(1) + '%';
+      } else {
+        document.getElementById('timeline-healthy').style.width = '0%';
+      }
+      document.getElementById('dot-current').style.left = currentPct.toFixed(1) + '%';
+      document.getElementById('dot-healthy').style.left = Math.min(100, healthyEndPct).toFixed(1) + '%';
+    }, 50);
+
+    const midAge = Math.round(le / 2);
+    document.getElementById('timeline-mid').textContent = `Age ${midAge}`;
+    document.getElementById('timeline-end-label').textContent = `Age ${Math.round(le)}`;
+
+    // Insight
+    const regionNames = { japan: 'Japan', usa: 'United States', uk: 'United Kingdom', world: 'World Average' };
+    const illYears = (le - hale).toFixed(1);
+    let insight = `📍 <strong>${regionNames[region]}</strong> · ${sex === 'male' ? 'Male' : 'Female'} · Age ${age}<br>`;
+    insight += `You've consumed <strong>${livedPct.toFixed(1)}%</strong> of your estimated lifespan. `;
+    if (healthyLeft > 0) {
+      insight += `You have approximately <strong>${healthyLeft.toFixed(1)} healthy years</strong> remaining before reaching the average HALE threshold. `;
+    } else {
+      insight += `You have surpassed the average healthy life expectancy for your demographic. `;
+    }
+    insight += `On average, the last <strong>${illYears} years</strong> of life involve reduced health capacity.`;
+    document.getElementById('insight-box').innerHTML = insight;
+
+    const resultsEl = document.getElementById('results');
+    resultsEl.classList.remove('hidden');
+    resultsEl.classList.remove('fade-in');
+    void resultsEl.offsetWidth;
+    resultsEl.classList.add('fade-in');
+  }
+
+  // Auto-calculate on load
+  window.addEventListener('load', calculate);
+</script>
+</body>
+</html>
